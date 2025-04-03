@@ -10,6 +10,7 @@ This document provides the setup and general information about each request. For
 - **2dB Antenna**
 - **Breadboard**
 - **Two Wires**
+- **USB Multimeter**
 
 ### Software Setup:
 - **Arduino IDE**
