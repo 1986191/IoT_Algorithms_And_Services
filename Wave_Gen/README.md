@@ -1,5 +1,9 @@
 # Wave Generator
 
+**A better version of the code can be found inside the */Bonus/Wave_Generator/* folder**
+
+---
+
 #### Scope:
 This code generates a composite wave signal of the form:
 
