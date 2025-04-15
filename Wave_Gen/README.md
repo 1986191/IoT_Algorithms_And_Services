@@ -1,6 +1,6 @@
 # Wave Generator
 
-**A better version of the code can be found inside the */Bonus/Wave_Generator/* folder**
+**A better version of the code can be found inside the */Bonus/Gen_Signals/* folder**
 
 ---
 
