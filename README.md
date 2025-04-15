@@ -22,7 +22,6 @@ This document provides the setup and general information about each request. For
 - A shared ground connection between the devices is established using a wire.
 
 ### Required Libraries:
-- **FreeRTOS**
 - **ArduinoFFT**
 - **paho-mqtt** - for the python server
 
