@@ -115,6 +115,50 @@ More generically the volume of data transmitted is **96 bytes * Transmission_Fre
 [Source for data and payload usage at docs.devicewise.com.](https://docs.devicewise.com/Content/Products/IoT_Portal_API_Reference_Guide/MQTT_Interface/MQTT-data-usage.htm)
 3. The implemented system measures message latency by calculating the Round Trip Time (RTT) between a sender and a simple MQTT server (running on a personla computer) that echoes received messages. The estimated latency is half of the RTT. Over a typical home WiFi network, MQTT message latency is expected to range between 40 and 70 ms, with occasional peaks above or below this range due to network fluctuations, congestion, or processing delays on the broker or client side.
 
+### Power Consumption Evaluation with INA219 Sensor
+
+A better power consumption evaluation has been achieved by using the more suitable INA219 for this kind of scopes.  
+The setup consists in using three different devices, as usual two ESP32 and an Arduino Uno R3. The scopes of the devices are the following:
+
+- **Heltec LoRa V3**: Running the main program, possibly with adaptive sampling functionality, FFT computation (for the adaptive sampling) WiFi communication over the simple MQTT protocol, and also the more power hungry LoRa communication. It's the main device being monitored.
+- **ESP32 Wroom Dev Kit**: It's only purpose is generating an input signal to be sampled by the Heltec ESP32, to be used for further purposes, and, very importantly, power the Heltec ESP32 acting as a power supply through the 5V pin directly wired to the microcontroller's USB power rail, ensuring that both the devices will be powered with enough current (from the connected computer).
+- **Arduino Uno**: Through I2C communication (SCA and SCL pins), reads the INA219 needed values, like the shunt voltage, the current, and the power. An important thing to notice, is that due to the power being defined as \( P = V \times I \), and being the input voltage the 5V from the PC usb, the power consumption might look like reaching very high peaks, above 1000 mW.
+
+#### Connection Overview
+
+The connection of the various components has been setup as following:
+
+- The ESP32 Wroom generating the signal is the power source.
+- The Heltec ESP32 is the Load.
+- The power wire connecting the two ESP32s (for powering the second ESP32 from the first), passes through the INA219 sensor.
+- The two ESP32 have two wires connecting one the grounds, and the other the 5V Input pin.
+- The Arduino device powers the INA219 through 5V and also communicates with it through I2C using the SCL and SDA pins.
+- The Arduino ground was not shared with the ESP32s grounds.
+
+#### Observation
+
+An interesting observation arises when comparing current and power plots. Since power is defined as \( P = V \times I \), phenomena that involve small voltage variations, like ADC sampling the input pin (which reflects the sensed voltage), might be noticeable in the power graph but remain invisible in the current plot.
+
+#### Results Overview
+
+Overall way better values (more precise both temporally and numerically) have been obtained with the INA219 with respect to the USB multimeter. The multimeter outputs what looks like an off esteemed mean of the passing current.
+
+The values obtained with the INA219 by observing the plots are the following:
+
+| State                | Current (mA) | Power (mW) |
+|-----------------------|--------------|------------|
+| Light sleep           | ~1-3         | ~5-15      |
+| Deep sleep            | ~0.1-0.5     | ~0.5-2.5   |
+| Idle                  | ~40-50       | ~200-250   |
+| Sampling              | ~50-90       | ~250-450   |
+| FFT computation       | ~100-150     | ~500-750   |
+| WiFi module on        | ~110-130     | ~550-650   |
+| WiFi transmission     | ~150-250     | ~750-1250  |
+| LoRa transmission     | ~120-230     | ~600-1150  |
+
+![Current power plot](./pictures/graph.png)
+The graph shows the power consumption (red, lower plot) and current draw (green, upper plot) of an ESP32 microcontroller across a ~10-second window. Up to second 424, the ESP32 is initializing and connecting to WiFi and MQTT, which is marked by a sharp rise in both current and power. After successful connection, between ~424s and ~430s, the device alternates between two main states: periodic sampling of analog input (flat baseline with small steps) and periodic bursts where FFT calculations are performed every 5 seconds (modest spikes in both plots). Sharp, high peaks at ~425s, ~427s, ~429s, and ~430s correspond to WiFi/MQTT activity — likely sending average values to the broker every 10 seconds. Finally, the ESP32 should prepare for deep sleep (not observable in the image), where current drawn drops significantly (values above).
+
 ---
 
 ### **8. Bonus**
