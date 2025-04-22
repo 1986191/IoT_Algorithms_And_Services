@@ -61,9 +61,17 @@ Letting the loop() function run without any delay, and measuring the average tim
 ### **3. Optimal Sampling Frequency**
 > Compute the Fast Fourier Transform (FFT) of the input signal and adapt the sampling frequency accordingly. For instance, if the maximum frequency in the signal is 5Hz, the sampling frequency should be adjusted to 10Hz.
 
-<p>
-The code simply performs an FFT on the sampled signal, and prints the peak frequency on the serial console. Initially the signal (<b>2sin(2π3t) + 4sin(2π5t)</b>, a sum of a 3Hz sin wave and a 5Hz wave) has been oversampled at 5kHz, and then the sampling frequency has been adjusted to 12Hz after performing an FFT, accordingly to the FFT major peak results.
-</p>
+The code implements a multitasking data acquisition and processing system on the ESP32 using FreeRTOS. The system is designed for continuous sampling, processing, and monitoring of sensor data.
+
+SamplingTask: Periodically samples analog data from an ADC pin, adjusts the sampling frequency, and uses a semaphore to ensure safe, atomic sampling. It also handles performance evaluation and manages the watchdog timer.
+
+ProcessingTask: Analyzes the sampled data to compute its peak frequency. Based on the peak frequency, it recalculates the sampling frequency using the Nyquist theorem. The new frequency is constrained and stored for future data collection.
+
+MonitorTask: Continuously monitors system health, reporting free heap memory and stack usage. It also provides visual feedback by blinking an LED and displaying system data on an OLED screen if enabled.
+
+TimerTriggerTask: Waits for new sample data notifications, swaps the active sample buffer, and triggers the computation of the FFT in a new ProcessingTask. This task helps decouple sampling from computationally expensive FFT analysis.
+
+Other functions, like SwapBuffers, ComputePeakFrequency_ESP, and ReadVoltage, are well-documented in the code and serve specific purposes related to buffer management, frequency computation, and voltage reading.
 
 ---
 
@@ -158,6 +166,8 @@ The values obtained with the INA219 by observing the plots are the following:
 
 ![Current power plot](./pictures/graph.png)
 The graph shows the power consumption (red, lower plot) and current draw (green, upper plot) of an ESP32 microcontroller across a ~10-second window. Up to second 424, the ESP32 is initializing and connecting to WiFi and MQTT, which is marked by a sharp rise in both current and power. After successful connection, between ~424s and ~430s, the device alternates between two main states: periodic sampling of analog input (flat baseline with small steps) and periodic bursts where FFT calculations are performed every 5 seconds (modest spikes in both plots). Sharp, high peaks at ~425s, ~427s, ~429s, and ~430s correspond to WiFi/MQTT activity — likely sending average values to the broker every 10 seconds. Finally, the ESP32 should prepare for deep sleep (not observable in the image), where current drawn drops significantly (values above).
+
+[Heltec WiFi LoRa V3 datasheet with the expected power consumptions at chapter 3](https://resource.heltec.cn/download/WiFi_LoRa_32_V3/HTIT-WB32LA_V3.2.pdf?utm_source=chatgpt.com)
 
 ---
 
